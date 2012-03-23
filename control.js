@@ -1,11 +1,11 @@
 // Light wrapper over socket api, and convenience for attaching to a Viewport
 function Control(url) {
-  this.socket = new WebSocket(url);
-  this.mousepos = { x: 0, y: 0 };
-
   var self = this;
 
-  this.attach = function(viewport) {
+  self.socket = new WebSocket(url);
+  self.mousepos = { x: 0, y: 0 };
+
+  self.attach = function(viewport) {
     // Only state change
     viewport.withContext(function(context) {
       context.strokeStyle = "black";
@@ -58,7 +58,7 @@ function Control(url) {
     return self;
   }
 
-  this.drawPointer = function(viewport) {
+  self.drawPointer = function(viewport) {
     viewport.withCanvasAndContext(function(canvas, context) {
       context.clearRect(0, 0, canvas.width, canvas.height);
 
