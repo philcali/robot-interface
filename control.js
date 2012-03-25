@@ -55,6 +55,25 @@ function Control(url) {
       self.socket.send("keyup|" + evt.keyCode);
     });
 
+    $(".record").live('click', function() {
+      if ($(this).hasClass('play')) {
+        $(this).removeClass('play');
+        $(this).addClass('stop');
+        $(this).children("img").attr("src", "/img/stop.png");
+        self.socket.send("record|record");
+      } else {
+        $(this).removeClass('stop');
+        $(this).addClass('play');
+        $(this).children("img").attr("src", "/img/play.png");
+        self.socket.send("record|stop");
+      }
+      return false;
+    });
+
+    $(document).on("contextmenu", function(e) {
+      if (e.preventDefault) e.preventDefault();
+    });
+
     return self;
   }
 
