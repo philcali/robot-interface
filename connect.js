@@ -2,9 +2,7 @@
 $(function() {
   var key = $("#robot-key").text();
 
-  new Connect(key).start(function(msg) {
-    alert("Could not connect: " + msg); 
-  });
+  standardConnect(key);
 });
 
 function Connect(key) {
@@ -25,6 +23,10 @@ function Connect(key) {
       if (e.data == 'connect') {
         control.attach(viewport);
 
+        var img = '<img src="/img/play.png" title="Record"/>';
+
+        $('.nav').append('<li><a class="record" href="#">'+img+'</a></li>');
+
         $(viewport).on('reload', function() {
           control.drawPointer(viewport);
         });
@@ -38,4 +40,10 @@ function Connect(key) {
   };
 
   return self;
+}
+
+function standardConnect(key) {
+  return new Connect(key).start(function(msg) {
+    alert("Could not connect: " + msg);
+  });
 }
