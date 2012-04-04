@@ -1,10 +1,3 @@
-// Web variety
-$(function() {
-  var key = $("#robot-key").text();
-
-  standardConnect(key);
-});
-
 function Connect(key) {
   var connection = this;
 
