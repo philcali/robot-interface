@@ -28,8 +28,8 @@ function Control(url) {
         }
 
         // return relative mouse position
-        x -= left + window.pageXOffset;
-        y -= top + window.pageYOffset;
+        x = x - left + window.pageXOffset;
+        y = y - top + window.pageYOffset;
 
         control.mousepos = { x: x, y: y };
         control.socket.send("mousemove|" + x + "|" + y);
