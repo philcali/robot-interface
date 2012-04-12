@@ -17,7 +17,9 @@ function Control(url) {
       $(canvas).on('mousemove', function(evt) {
         var obj = canvas,
           top = 0,
-          left = 0;
+          left = 0,
+          x = evt.clientX,
+          y = evt.clientY;
 
         while (obj && obj.tagName !== 'BODY') {
           top += obj.offsetTop;
@@ -26,8 +28,8 @@ function Control(url) {
         }
 
         // return relative mouse position
-        var x = evt.clientX - left + window.pageXOffset,
-          y = evt.clientY - top + window.pageYOffset;
+        x -= left + window.pageXOffset;
+        y -= top + window.pageYOffset;
 
         control.mousepos = { x: x, y: y };
         control.socket.send("mousemove|" + x + "|" + y);
