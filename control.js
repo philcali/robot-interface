@@ -61,13 +61,9 @@ function Control(url) {
     $(".record").live('click', function() {
       if ($(this).hasClass('play')) {
         $(this).removeClass('play');
-        $(this).addClass('stop');
-        $(this).children("img").attr("src", "/img/stop.png");
         control.socket.send("record|record");
-      } else {
+      } else if ($(this).hasClass('stop')) {
         $(this).removeClass('stop');
-        $(this).addClass('play');
-        $(this).children("img").attr("src", "/img/play.png");
         control.socket.send("record|stop");
       }
       return false;
