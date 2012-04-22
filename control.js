@@ -1,11 +1,137 @@
 // Light wrapper over socket api, and convenience for attaching to a Viewport
 function Control(url) {
-  var control = this;
+  var control = this,
+    authed = false,
+    attached = false;
 
   control.socket = new WebSocket(url);
   control.mousepos = { x: 0, y: 0 };
 
+  control.isAuthed = function() { return authed; };
+  control.isAttached = function() { return attached; };
+
+  control.auth = function(key) {
+    $(control.socket).on('open', function() {
+      control.socket.send("auth|" + key);
+    });
+
+    $(control.socket).on('message', function(e) {
+      var split = e.originalEvent.data.split('|');
+
+      switch (split[0]) {
+      case "auth":
+        authed = true;
+        $(control.socket).off('message');
+        $(control).trigger('loginsuccess');
+        break;
+      default:
+        control.socket.close();
+        $(control).trigger('loginfailure', { msg: split.join(' ') });
+      }
+    });
+  };
+
+  control.addCommunication = function() {
+    $(control.socket).on('message', function(e) {
+      var split = e.originalEvent.data.split('|');
+
+      switch (split[0]) {
+      case "clipboard":
+        switch (split[1]) {
+        case "get":
+          $("#clipboard-contents").val(split.slice(2).join('|'));
+          $("#clipboard-modal").modal('show');
+          $("#clipboard-contents").focus();
+          break;
+        default:
+          console.log(split[1]);
+        }
+        break;
+      case "record":
+        switch (split[1]) {
+        case "started":
+          $(".record").removeClass('wait').addClass('stop');
+          $(".record").children("img").attr("src", "/img/stop.png");
+          break;
+        case "stopped":
+          $(".record").removeClass('wait').addClass('play');
+          $(".record").children("img").attr("src", "/img/play.png");
+          break;
+        default:
+          control.socket.send("record|status");
+        }
+        break;
+      default:
+        console.log(e.originalEvent.data);
+      }
+    });
+  };
+
+  control.addRecord = function() {
+    var img = '<img src="/img/play.png" title="Record"/>';
+    $('.nav').append('<li><a class="record play" href="#">' + img + '</a></li>');
+
+    $(".record").on('click', function() {
+      if ($(this).hasClass('play')) {
+        $(this).removeClass('play');
+        control.socket.send("record|record");
+      } else if ($(this).hasClass('stop')) {
+        $(this).removeClass('stop');
+        control.socket.send("record|stop");
+      }
+      return false;
+    });
+  };
+
+  control.addClipboard = function() {
+    var img = '<img src="/img/clip.png" title="Clipboard"/>';
+    $('.nav').append('<li><a class="clipboard" href="#">' + img + '</a></li>');
+
+    $('.clipboard').on('click', function() {
+      control.socket.send('clipretrieve|get');
+      return false;
+    });
+
+    $('#clipboard-send').on('click', function() {
+      control.socket.send('clipset|' + $('#clipboard-contents').val());
+      $('#clipboard-modal').modal('hide');
+      return false;
+    });
+  };
+
+  control.addKeyboard = function() {
+    // Allow interaction with clipboard element
+    $(document).on('keydown', function(evt) {
+      if ($(evt.target).attr('id') !== 'clipboard-contents') {
+        if (evt.preventDefault) {
+          evt.preventDefault();
+        }
+        control.socket.send("keydown|" + evt.keyCode);
+      }
+    });
+
+    $(document).on('keyup', function(evt) {
+      if ($(evt.target).attr('id') !== 'clipboard-contents') {
+        if (evt.preventDefault) {
+          evt.preventDefault();
+        }
+        control.socket.send("keyup|" + evt.keyCode);
+      }
+    });
+  };
+
   control.attach = function(viewport) {
+    // Must be authed and not yet attached
+    if (!control.isAuthed() || control.isAttached()) {
+      return control;
+    }
+
+    // Additional capabilities
+    control.addCommunication();
+    control.addRecord();
+    control.addClipboard();
+    control.addKeyboard();
+
     // Only state change
     viewport.withContext(function(context) {
       context.strokeStyle = "black";
@@ -42,39 +168,19 @@ function Control(url) {
       $(canvas).on('mouseup', function(evt) {
         control.socket.send("mouseup|" + evt.button);
       });
+
+      $(canvas).on("contextmenu", function(e) {
+        if (e.preventDefault) {
+          e.preventDefault();
+        }
+      });
     });
 
-    $(document).on('keydown', function(evt) {
-      if (evt.preventDefault) {
-        evt.preventDefault();
-      }
-      control.socket.send("keydown|" + evt.keyCode);
+    $(viewport).on('reload', function() {
+      control.drawPointer(viewport);
     });
 
-    $(document).on('keyup', function(evt) {
-      if (evt.preventDefault) {
-        evt.preventDefault();
-      }
-      control.socket.send("keyup|" + evt.keyCode);
-    });
-
-    $(".record").live('click', function() {
-      if ($(this).hasClass('play')) {
-        $(this).removeClass('play');
-        control.socket.send("record|record");
-      } else if ($(this).hasClass('stop')) {
-        $(this).removeClass('stop');
-        control.socket.send("record|stop");
-      }
-      return false;
-    });
-
-    $(document).on("contextmenu", function(e) {
-      if (e.preventDefault) {
-        e.preventDefault();
-      }
-    });
-
+    attached = true;
     return control;
   };
 
