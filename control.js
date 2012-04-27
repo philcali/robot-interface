@@ -1,6 +1,8 @@
 // Light wrapper over socket api, and convenience for attaching to a Viewport
 function Control(url) {
   var control = this,
+    scaledX = 1.0,
+    scaledY = 1.0,
     authed = false,
     attached = false;
 
@@ -99,6 +101,61 @@ function Control(url) {
     });
   };
 
+  control.addDisplayControls = function(viewport) {
+    var gatherValues = function() {
+      var scale = $('.size').val();
+      return {
+        quality: $('.quality').val(),
+        pointer: $('.pointer').is(':checked'),
+        scaleX: scale,
+        scaleY: scale
+      };
+    },
+      img = '<img src="/img/display.png" title="Display Settings"/>',
+      callback = (function() {
+        if (!Desktop.isDefined()) {
+          return function() {
+            var vs = gatherValues(),
+              props = [vs.scaleX, vs.scaleY, vs.quality, vs.pointer].join('|');
+            control.socket.send('image|' + props);
+            return vs;
+          };
+        } else {
+          return function() {
+            var vs = gatherValues(),
+              desktop = Desktop.get();
+
+            desktop.scaleX = vs.scaleX;
+            desktop.scaleY = vs.scaleY;
+            desktop.pointer = vs.pointer;
+            desktop.quality = vs.quality;
+            return vs;
+          };
+        }
+      }());
+
+    $('.nav').append('<li><a class="display" href="#">' + img + '</a></li>');
+
+    $('.display').on('click', function() {
+      $('#controls-modal').modal('show');
+      return false;
+    });
+
+    $('#controls-send').off().on('click', function() {
+      var vs = callback(),
+        canvas = viewport.getCanvas();
+
+      canvas.width = viewport.getWidth() * vs.scaleX;
+      canvas.height = viewport.getHeight() * vs.scaleY;
+
+      scaledX = 1 / vs.scaleX;
+      scaledY = 1 / vs.scaleY;
+
+      $('#controls-modal').modal('hide');
+      return false;
+    });
+  };
+
   control.addKeyboard = function() {
     // Allow interaction with clipboard element
     $(document).on('keydown', function(evt) {
@@ -128,6 +185,7 @@ function Control(url) {
 
     // Additional capabilities
     control.addCommunication();
+    control.addDisplayControls(viewport);
     control.addRecord();
     control.addClipboard();
     control.addKeyboard();
@@ -158,7 +216,9 @@ function Control(url) {
         y = y - top + window.pageYOffset;
 
         control.mousepos = { x: x, y: y };
-        control.socket.send("mousemove|" + x + "|" + y);
+        control.socket.send("mousemove|" +
+          Math.round(x * scaledX) + "|" + Math.round(y * scaledY)
+          );
       });
 
       $(canvas).on('mousedown', function(evt) {

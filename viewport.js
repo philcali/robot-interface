@@ -14,8 +14,13 @@ window.requestAnimFrame = (function () {
 function Viewport(canvasId) {
   var canvas = document.getElementById(canvasId),
     context = canvas.getContext('2d'),
+    originalWidth = canvas.width,
+    originalHeight = canvas.height,
     running = false,
     viewport = this;
+
+  this.getWidth = function() { return originalWidth; };
+  this.getHeight = function() { return originalHeight; };
 
   this.getCanvas = function() { return canvas; };
   this.getContext = function() { return context; };
