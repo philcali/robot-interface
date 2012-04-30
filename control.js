@@ -134,12 +134,14 @@ function Control(url) {
         }
       }());
 
-    $('.nav').append('<li><a class="display" href="#">' + img + '</a></li>');
+    if ($('.display').length === 0) {
+      $('.nav').append('<li><a class="display" href="#">' + img + '</a></li>');
 
-    $('.display').on('click', function() {
-      $('#controls-modal').modal('show');
-      return false;
-    });
+      $('.display').on('click', function() {
+        $('#controls-modal').modal('show');
+        return false;
+      });
+    }
 
     $('#controls-send').off().on('click', function() {
       var vs = callback(),
