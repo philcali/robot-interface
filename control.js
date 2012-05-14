@@ -103,9 +103,10 @@ function Control(url) {
 
   control.addDisplayControls = function(viewport) {
     var gatherValues = function() {
-      var scale = $('.size').val();
+      var pad = function(value) { return value.match(/\./) ? value : value + ".0"; },
+        scale = pad($(".size").val());
       return {
-        quality: $('.quality').val(),
+        quality: pad($('.quality').val()),
         pointer: $('.pointer').is(':checked'),
         scaleX: scale,
         scaleY: scale
